@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cesium 지도 (모바일 WebView)</title>
+
+  <!-- 라이브러리는 앱에 내장(오프라인) -->
+  <script src="./cesium/Cesium.js"></script>
+  <link href="./cesium/Widgets/widgets.css" rel="stylesheet" />
+
+  <style>
+    html, body, #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+    }
+    /* 모바일 화면에서 안 쓸 데스크톱용 위젯 숨김 */
+    .cesium-viewer-toolbar,
+    .cesium-viewer-animationContainer,
+    .cesium-viewer-timelineContainer,
+    .cesium-viewer-bottom {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+
+  <script src="./config.js"></script>
+  <script>
+    Cesium.Ion.defaultAccessToken = CESIUM_TOKEN;
+
+    async function main() {
+      const viewer = new Cesium.Viewer("cesiumContainer", {
+        baseLayerPicker: false,
+        geocoder: false,
+        homeButton: false,
+        sceneModePicker: false,
+        navigationHelpButton: false,
+        animation: false,
+        timeline: false,
+        fullscreenButton: false,
+        infoBox: false,
+        selectionIndicator: false,
+        terrain: Cesium.Terrain.fromWorldTerrain(),
+        requestRenderMode: true,
+        maximumRenderTimeChange: Infinity,
+      });
+
+      viewer.resolutionScale = window.devicePixelRatio;
+      viewer.scene.globe.maximumScreenSpaceError = 1.5;
+      viewer.scene.screenSpaceCameraController.minimumZoomDistance = 300000;   // 300km — 작은 나라 경계 확인 가능
+      viewer.scene.screenSpaceCameraController.maximumZoomDistance = 30000000; // 30,000km — 지구 전체 여유있게
+      viewer.scene.screenSpaceCameraController.enableTranslate = false;        // 지구 중심이 화면 중앙에서 벗어나지 않도록
+
+      // 기본 레이어(Bing/Ion) 제거 후 Mapbox만 사용
+      viewer.imageryLayers.removeAll();
+      const dpr = window.devicePixelRatio >= 2 ? '@2x' : '';
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.UrlTemplateImageryProvider({
+          url: `https://api.mapbox.com/styles/v1/${MAPBOX_STYLE_ID}/tiles/512/{z}/{x}/{y}${dpr}?access_token=${MAPBOX_TOKEN}`,
+          tileWidth: 512,
+          tileHeight: 512,
+          minimumLevel: 0,
+          maximumLevel: 22,
+        })
+      );
+
+      viewer.scene.globe.tileLoadProgressEvent.addEventListener(() => {
+        viewer.scene.requestRender();
+      });
+
+      viewer.camera.setView({
+        destination: Cesium.Cartesian3.fromDegrees(128.0, 35.9, 15000000),
+      });
+
+      // 한반도 경계 이탈 시 복귀 로직 — 줌인 시 오작동으로 비활성화
+      // viewer.camera.moveEnd.addEventListener(() => {
+      //   const viewRect = viewer.camera.computeViewRectangle();
+      //   if (viewRect && !Cesium.Rectangle.intersection(viewRect, KOREA_RECTANGLE)) {
+      //     viewer.camera.flyTo({ destination: KOREA_RECTANGLE, duration: 1.0 });
+      //   }
+      // });
+
+      // ── 로컬 국가 데이터 로드 + 점-폴리곤 검사 ──
+
+      function notifyNative(payload) {
+        try {
+          if (window.NativeBridge && window.NativeBridge.postMessage) {
+            window.NativeBridge.postMessage(JSON.stringify(payload));
+          } else if (window.webkit?.messageHandlers?.nativeBridge) {
+            window.webkit.messageHandlers.nativeBridge.postMessage(payload);
+          }
+        } catch (e) {
+          console.warn("Native bridge not available:", e);
+        }
+      }
+
+      function pointInRing(lon, lat, ring) {
+        let inside = false;
+        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+          const [xi, yi] = ring[i];
+          const [xj, yj] = ring[j];
+          if ((yi > lat) !== (yj > lat) && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
+            inside = !inside;
+          }
+        }
+        return inside;
+      }
+
+      function pointInGeometry(lon, lat, geometry) {
+        if (geometry.type === 'Polygon') {
+          return pointInRing(lon, lat, geometry.coordinates[0]);
+        }
+        if (geometry.type === 'MultiPolygon') {
+          return geometry.coordinates.some(poly => pointInRing(lon, lat, poly[0]));
+        }
+        return false;
+      }
+
+      const countriesRes = await fetch('./countries.geojson');
+      const countriesData = await countriesRes.json();
+
+      let highlightEntities = [];
+
+      function clearHighlight() {
+        highlightEntities.forEach(e => viewer.entities.remove(e));
+        highlightEntities = [];
+      }
+
+      function addPolygonEntity(ring) {
+        const positions = ring.map(([lon, lat]) => Cesium.Cartesian3.fromDegrees(lon, lat));
+        return viewer.entities.add({
+          polygon: {
+            hierarchy: new Cesium.PolygonHierarchy(positions),
+            material: Cesium.Color.YELLOW.withAlpha(0.35),
+            outline: true,
+            outlineColor: Cesium.Color.YELLOW,
+            outlineWidth: 2,
+          }
+        });
+      }
+
+      function highlightFeature(feature) {
+        clearHighlight();
+        const geom = feature.geometry;
+        if (geom.type === 'Polygon') {
+          highlightEntities.push(addPolygonEntity(geom.coordinates[0]));
+        } else if (geom.type === 'MultiPolygon') {
+          geom.coordinates.forEach(poly => {
+            highlightEntities.push(addPolygonEntity(poly[0]));
+          });
+        }
+        viewer.scene.requestRender();
+      }
+
+      const clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+      clickHandler.setInputAction((click) => {
+        const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
+        if (!cartesian) return;
+
+        const carto = Cesium.Cartographic.fromCartesian(cartesian);
+        const lon = Cesium.Math.toDegrees(carto.longitude);
+        const lat = Cesium.Math.toDegrees(carto.latitude);
+
+        const feature = countriesData.features.find(f => pointInGeometry(lon, lat, f.geometry));
+        if (feature) {
+          highlightFeature(feature);
+          notifyNative({ type: 'countrySelected', name: feature.properties.name, code: feature.properties.code });
+        } else {
+          clearHighlight();
+          viewer.scene.requestRender();
+        }
+      }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    }
+
+    main().catch((err) => {
+      document.body.innerHTML =
+        '<pre style="color:#fff;background:#000;padding:16px;">' +
+        "Cesium 초기화 오류: " + (err && err.message ? err.message : err) +
+        "</pre>";
+      console.error(err);
+    });
+  </script>
+</body>
+</html>
