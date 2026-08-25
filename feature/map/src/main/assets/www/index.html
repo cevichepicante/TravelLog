@@ -53,6 +53,15 @@
 
       viewer.resolutionScale = window.devicePixelRatio;
       viewer.scene.globe.maximumScreenSpaceError = 1.5;
+
+      // 낮/밤 영역 구분
+      // viewer.scene.globe.enableLighting = true;
+      // viewer.clock.currentTime = Cesium.JulianDate.fromDate(new Date());
+      // const nightBrightness = viewer.scene.postProcessStages.add(
+      //   Cesium.PostProcessStageLibrary.createBrightnessStage()
+      // );
+      // nightBrightness.uniforms.brightness = 0.8;
+
       viewer.scene.screenSpaceCameraController.minimumZoomDistance = 300000;   // 300km — 작은 나라 경계 확인 가능
       viewer.scene.screenSpaceCameraController.maximumZoomDistance = 30000000; // 30,000km — 지구 전체 여유있게
       viewer.scene.screenSpaceCameraController.enableTranslate = false;        // 지구 중심이 화면 중앙에서 벗어나지 않도록
