@@ -25,10 +25,36 @@
     .cesium-viewer-bottom {
       display: none !important;
     }
+
+    #country-popup {
+      position: fixed;
+      display: none;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      overflow: hidden;
+      min-width: 160px;
+      max-width: 220px;
+      z-index: 999;
+    }
+    #country-popup .popup-item {
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #111;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    #country-popup .popup-item:last-child {
+      border-bottom: none;
+    }
+    #country-popup .popup-item:active {
+      background: #f5f5f5;
+    }
   </style>
 </head>
 <body>
   <div id="cesiumContainer"></div>
+  <div id="country-popup"></div>
 
   <script src="./config.js"></script>
   <script>
@@ -143,14 +169,67 @@
         return false;
       }
 
+      function computeCentroid(geometry) {
+        let sumLon = 0, sumLat = 0, count = 0;
+        const process = (ring) => ring.forEach(([lon, lat]) => { sumLon += lon; sumLat += lat; count++; });
+        if (geometry.type === 'Polygon') process(geometry.coordinates[0]);
+        else if (geometry.type === 'MultiPolygon') geometry.coordinates.forEach(p => process(p[0]));
+        return count > 0 ? [sumLon / count, sumLat / count] : null;
+      }
+
+      function findNearbyCountries(lon, lat, maxCount = 5, maxDist = 15) {
+        return countriesData.features
+          .map(f => {
+            const c = computeCentroid(f.geometry);
+            if (!c) return null;
+            const dist = Math.hypot(lon - c[0], lat - c[1]);
+            return { feature: f, dist };
+          })
+          .filter(item => item && item.dist <= maxDist)
+          .sort((a, b) => a.dist - b.dist)
+          .slice(0, maxCount)
+          .map(item => item.feature);
+      }
+
       const countriesRes = await fetch('./countries.geojson');
       const countriesData = await countriesRes.json();
 
-      window.selectCountryByCode = function(code) {
-        const feature = countriesData.features.find(f => f.properties.code === code);
-        if (!feature) return;
+      // ── 팝업 ──
 
+      const popup = document.getElementById('country-popup');
+
+      function showPopup(screenX, screenY, features) {
+        popup.innerHTML = '';
+        features.forEach(f => {
+          const item = document.createElement('div');
+          item.className = 'popup-item';
+          item.textContent = f.properties.name;
+          item.addEventListener('click', () => {
+            hidePopup();
+            selectCountryFeature(f);
+          });
+          popup.appendChild(item);
+        });
+
+        // 화면 밖으로 나가지 않도록 위치 조정
+        popup.style.display = 'block';
+        const pw = popup.offsetWidth, ph = popup.offsetHeight;
+        const x = Math.min(screenX, window.innerWidth - pw - 8);
+        const y = Math.min(screenY, window.innerHeight - ph - 8);
+        popup.style.left = `${Math.max(8, x)}px`;
+        popup.style.top  = `${Math.max(8, y)}px`;
+        viewer.scene.requestRender();
+      }
+
+      function hidePopup() {
+        popup.style.display = 'none';
+      }
+
+      // ── 나라 선택 공통 로직 ──
+
+      function selectCountryFeature(feature) {
         highlightFeature(feature);
+        notifyNative({ type: 'countrySelected', name: feature.properties.name, code: feature.properties.code });
 
         let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
         const processRing = (ring) => ring.forEach(([lon, lat]) => {
@@ -166,6 +245,11 @@
           duration: 1.5,
         });
         viewer.scene.requestRender();
+      }
+
+      window.selectCountryByCode = function(code) {
+        const feature = countriesData.features.find(f => f.properties.code === code);
+        if (feature) selectCountryFeature(feature);
       };
 
       let highlightEntities = [];
@@ -201,19 +285,56 @@
         viewer.scene.requestRender();
       }
 
-      const clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-      clickHandler.setInputAction((click) => {
-        const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
-        if (!cartesian) return;
+      // ── 클릭 / 롱클릭 핸들러 ──
 
+      const eventHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+      let longPressTimer = null;
+      let longPressPos = null;
+      let justLongPressed = false;
+      const LONG_PRESS_MS = 600;
+
+      function screenToLonLat(position) {
+        const cartesian = viewer.camera.pickEllipsoid(position, viewer.scene.globe.ellipsoid);
+        if (!cartesian) return null;
         const carto = Cesium.Cartographic.fromCartesian(cartesian);
-        const lon = Cesium.Math.toDegrees(carto.longitude);
-        const lat = Cesium.Math.toDegrees(carto.latitude);
+        return [Cesium.Math.toDegrees(carto.longitude), Cesium.Math.toDegrees(carto.latitude)];
+      }
 
-        const feature = countriesData.features.find(f => pointInGeometry(lon, lat, f.geometry));
+      eventHandler.setInputAction((e) => {
+        longPressPos = e.position;
+        longPressTimer = setTimeout(() => {
+          if (!longPressPos) return;
+          const ll = screenToLonLat(longPressPos);
+          if (!ll) return;
+          const nearby = findNearbyCountries(ll[0], ll[1]);
+          if (nearby.length > 0) {
+            showPopup(longPressPos.x, longPressPos.y, nearby);
+            justLongPressed = true;
+          }
+          longPressTimer = null;
+        }, LONG_PRESS_MS);
+      }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+
+      eventHandler.setInputAction(() => {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }, Cesium.ScreenSpaceEventType.LEFT_UP);
+
+      eventHandler.setInputAction(() => {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+      eventHandler.setInputAction((click) => {
+        // 롱클릭 직후 발생하는 클릭은 무시
+        if (justLongPressed) { justLongPressed = false; return; }
+        // 팝업 외부 클릭 시 닫기
+        if (popup.style.display === 'block') { hidePopup(); return; }
+        const ll = screenToLonLat(click.position);
+        if (!ll) return;
+        const feature = countriesData.features.find(f => pointInGeometry(ll[0], ll[1], f.geometry));
         if (feature) {
-          highlightFeature(feature);
-          notifyNative({ type: 'countrySelected', name: feature.properties.name, code: feature.properties.code });
+          selectCountryFeature(feature);
         } else {
           clearHighlight();
           viewer.scene.requestRender();
