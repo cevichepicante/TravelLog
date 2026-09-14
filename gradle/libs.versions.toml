@@ -18,6 +18,7 @@ appcompat = "1.7.0"
 core-ktx = "1.15.0"
 webkit = "1.12.1"
 naver-map = "3.20.0"
+mapbox = "11.9.0"
 google-maps-compose = "4.4.1"
 firebase-bom = "33.7.0"
 health-connect = "1.1.0-alpha10"
@@ -79,6 +80,8 @@ lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-ru
 
 # Maps
 naver-map-compose = { group = "com.naver.maps", name = "map-sdk", version.ref = "naver-map" }
+mapbox-maps = { group = "com.mapbox.maps", name = "android", version.ref = "mapbox" }
+mapbox-maps-compose = { group = "com.mapbox.extension", name = "maps-compose", version.ref = "mapbox" }
 maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "google-maps-compose" }
 
 # Firebase

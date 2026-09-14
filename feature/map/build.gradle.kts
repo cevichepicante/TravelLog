@@ -29,5 +29,6 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
     implementation(libs.lifecycle.viewmodel.compose)
-    implementation(libs.webkit)
+    implementation(libs.mapbox.maps)
+    implementation(libs.mapbox.maps.compose)
 }
