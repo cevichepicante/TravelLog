@@ -17,4 +17,7 @@ interface PlaceDao {
 
     @Delete
     suspend fun delete(entity: PlaceEntity)
+
+    @Query("DELETE FROM places WHERE id = :id")
+    suspend fun deleteById(id: String)
 }

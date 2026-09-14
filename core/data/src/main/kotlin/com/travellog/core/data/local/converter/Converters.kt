@@ -21,8 +21,23 @@ class Converters {
     @TypeConverter fun fromMediaType(value: MediaType?): String? = value?.name
     @TypeConverter fun toMediaType(value: String?): MediaType? = value?.let { MediaType.valueOf(it) }
 
-    @TypeConverter fun fromBadgeType(value: BadgeType?): String? = value?.name
-    @TypeConverter fun toBadgeType(value: String?): BadgeType? = value?.let { BadgeType.valueOf(it) }
+    @TypeConverter
+    fun fromBadgeType(value: BadgeType?): String? = when (value) {
+        is BadgeType.Country -> "COUNTRY:${value.id}:${value.name}"
+        is BadgeType.State -> "STATE:${value.countryId}:${value.name}"
+        null -> null
+    }
+
+    @TypeConverter
+    fun toBadgeType(value: String?): BadgeType? {
+        if (value == null) return null
+        val parts = value.split(":", limit = 3)
+        return when (parts.getOrNull(0)) {
+            "COUNTRY" -> BadgeType.Country(id = parts.getOrElse(1) { "" }, name = parts.getOrElse(2) { "" })
+            "STATE" -> BadgeType.State(countryId = parts.getOrElse(1) { "" }, name = parts.getOrElse(2) { "" })
+            else -> null
+        }
+    }
 
     @TypeConverter fun fromVisibility(value: Visibility?): String? = value?.name
     @TypeConverter fun toVisibility(value: String?): Visibility? = value?.let { Visibility.valueOf(it) }

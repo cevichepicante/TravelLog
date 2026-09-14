@@ -14,4 +14,7 @@ interface ScheduleDao {
 
     @Delete
     suspend fun delete(entity: ScheduleEntity)
+
+    @Query("DELETE FROM schedules WHERE id = :id")
+    suspend fun deleteById(id: String)
 }

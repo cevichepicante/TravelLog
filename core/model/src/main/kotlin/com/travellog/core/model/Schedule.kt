@@ -18,3 +18,16 @@ data class Destination(
     val city: String?,
     val flag: String,
 )
+
+data class DestinationSuggestion(
+    val city: String,
+    val places: List<PlaceSuggestion>,
+    val tips: List<String>,
+)
+
+data class PlaceSuggestion(
+    val name: String,
+    val category: String,
+    val description: String,
+    val emoji: String,
+)

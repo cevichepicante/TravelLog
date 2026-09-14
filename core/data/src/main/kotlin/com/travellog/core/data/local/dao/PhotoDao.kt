@@ -17,4 +17,7 @@ interface PhotoDao {
 
     @Delete
     suspend fun delete(entity: PhotoEntity)
+
+    @Query("DELETE FROM photos WHERE id = :id")
+    suspend fun deleteById(id: String)
 }
