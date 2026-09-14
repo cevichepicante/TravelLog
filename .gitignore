@@ -11,3 +11,4 @@ config.js
 .cxx
 local.properties
 *.hprof
+app/src/main/res/values/mapbox_access_token.xml
