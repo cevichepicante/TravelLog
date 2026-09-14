@@ -1,20 +1,30 @@
-package com.travellog.core.model
+package com.travellog.core.network.dto.user
 
-enum class Visibility { PRIVATE, FRIENDS }
+import kotlinx.serialization.Serializable
 
-data class User(
+@Serializable
+data class UserDto(
     val id: String,
     val name: String,
     val handle: String,
     val avatarEmoji: String,
     val title: String,
-    val visibility: Visibility,
+    val visibility: String,
     val storageUsedBytes: Long,
-    val storageMaxBytes: Long,
+    val storageTotalBytes: Long,
     val isPro: Boolean,
 )
 
-data class UserStats(
+@Serializable
+data class UpdateUserRequest(
+    val name: String? = null,
+    val avatarEmoji: String? = null,
+    val title: String? = null,
+    val visibility: String? = null,
+)
+
+@Serializable
+data class UserStatsDto(
     val countryCnt: Int,
     val stateCnt: Int,
     val photoCnt: Int,
@@ -23,7 +33,8 @@ data class UserStats(
     val totalSteps: Long,
 )
 
-data class PublicUser(
+@Serializable
+data class PublicUserDto(
     val id: String,
     val name: String,
     val handle: String,
