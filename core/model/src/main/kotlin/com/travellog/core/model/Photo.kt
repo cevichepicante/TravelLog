@@ -5,17 +5,20 @@ import java.time.Instant
 enum class MediaType { PHOTO, VIDEO }
 
 data class Photo(
-    val id: String,
-    val tripId: String,
-    val type: MediaType,
+    override val id: String,
+    override val tripId: String,
+    override val order: Int,
+    val mediaType: MediaType,
     val uri: String,
-    val latitude: Double?,
-    val longitude: Double?,
-    val city: String?,
-    val placeName: String?,
-    val memo: String?,
-    val emoji: String,
-    val accentColor: Long,
-    val takenAt: Instant,
-    val createdAt: Instant,
-)
+    val thumbnailUrl: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val city: String? = null,
+    val country: String? = null,
+    val placeName: String? = null,
+    val memo: String? = null,
+    val emoji: String? = null,
+    val accentColor: Long? = null,
+    val takenAt: Instant? = null,
+    val createdAt: Instant? = null,
+) : RecordItem

@@ -1,6 +1,5 @@
 package com.travellog.core.data.mapper
 
-import com.travellog.core.data.local.entity.BadgeEntity
 import com.travellog.core.model.Badge
 import com.travellog.core.model.BadgeDesign
 import com.travellog.core.model.BadgeType
@@ -20,32 +19,6 @@ fun BadgeDto.toDomain(): Badge = Badge(
     isRare = isRare,
     designId = designId,
     earnedAt = Instant.parse(earnedAt),
-)
-
-fun BadgeDto.toEntity(): BadgeEntity = BadgeEntity(
-    id = id,
-    type = when (type) {
-        "COUNTRY" -> BadgeType.Country(id = countryId ?: "", name = name)
-        "STATE" -> BadgeType.State(countryId = countryId ?: "", name = name)
-        else -> BadgeType.Country(id = countryId ?: "", name = name)
-    },
-    country = countryId ?: "",
-    city = if (type == "STATE") name else null,
-    emoji = emoji,
-    label = label,
-    isRare = isRare,
-    designId = designId,
-    earnedAt = Instant.parse(earnedAt),
-)
-
-fun BadgeEntity.toDomain(): Badge = Badge(
-    id = id,
-    type = type ?: BadgeType.Country(id = country, name = city ?: ""),
-    emoji = emoji,
-    label = label,
-    isRare = isRare,
-    designId = designId,
-    earnedAt = earnedAt,
 )
 
 fun BadgeDesignDto.toDomain(): BadgeDesign = BadgeDesign(

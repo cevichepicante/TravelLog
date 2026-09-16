@@ -1,9 +1,9 @@
 package com.travellog.core.data.repository.impl
 
 import com.travellog.core.data.mapper.toDomain
-import com.travellog.core.data.repository.FriendRepository
 import com.travellog.core.model.Friend
 import com.travellog.core.model.FriendRequest
+import com.travellog.core.model.repository.FriendRepository
 import com.travellog.core.network.api.FriendApi
 import com.travellog.core.network.dto.friend.RespondFriendRequestBody
 import com.travellog.core.network.dto.friend.SendFriendRequestBody

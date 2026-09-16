@@ -1,9 +1,9 @@
 package com.travellog.core.data.repository.impl
 
 import com.travellog.core.data.mapper.toDomain
-import com.travellog.core.data.repository.MapRepository
 import com.travellog.core.model.FriendMapPin
 import com.travellog.core.model.MapPin
+import com.travellog.core.model.repository.MapRepository
 import com.travellog.core.network.api.MapApi
 import javax.inject.Inject
 
