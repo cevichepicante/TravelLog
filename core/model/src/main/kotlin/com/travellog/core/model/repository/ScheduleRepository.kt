@@ -1,27 +1,27 @@
-package com.travellog.core.data.repository
+package com.travellog.core.model.repository
 
 import com.travellog.core.model.Destination
 import com.travellog.core.model.DestinationSuggestion
 import com.travellog.core.model.Schedule
-import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 interface ScheduleRepository {
-    fun observeSchedules(): Flow<List<Schedule>>
-    suspend fun refreshSchedules()
+    suspend fun getSchedules(): List<Schedule>
+    suspend fun getSchedule(scheduleId: String): Schedule
     suspend fun createSchedule(
         title: String,
         destinations: List<Destination>,
-        startDate: String,
-        endDate: String,
-        color: String? = null,
+        startDate: LocalDate,
+        endDate: LocalDate,
+        accentColor: Long? = null,
     ): Schedule
     suspend fun updateSchedule(
         scheduleId: String,
         title: String? = null,
         destinations: List<Destination>? = null,
-        startDate: String? = null,
-        endDate: String? = null,
-        color: String? = null,
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null,
+        accentColor: Long? = null,
     ): Schedule
     suspend fun deleteSchedule(scheduleId: String)
     suspend fun getDestinationSuggestions(city: String): DestinationSuggestion

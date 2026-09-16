@@ -6,7 +6,7 @@ compose-bom = "2024.12.01"
 hilt = "2.52"
 hilt-navigation-compose = "1.2.0"
 navigation-compose = "2.8.5"
-room = "2.6.1"
+kotlinx-coroutines = "1.9.0"
 datastore = "1.1.1"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
@@ -51,10 +51,8 @@ hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-com
 # Navigation
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
 
-# Room
-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+# Kotlin Coroutines
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 
 # DataStore
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }

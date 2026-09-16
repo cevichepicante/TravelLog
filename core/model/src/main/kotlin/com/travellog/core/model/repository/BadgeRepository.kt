@@ -1,4 +1,4 @@
-package com.travellog.core.data.repository
+package com.travellog.core.model.repository
 
 import com.travellog.core.model.Badge
 import com.travellog.core.model.BadgeDesign

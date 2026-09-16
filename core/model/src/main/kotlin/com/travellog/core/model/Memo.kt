@@ -3,11 +3,11 @@ package com.travellog.core.model
 import java.time.Instant
 
 data class Memo(
-    val id: String,
-    val tripId: String,
-    val photoId: String?,
+    override val id: String,
+    override val tripId: String,
+    override val order: Int,
     val text: String,
-    val city: String,
-    val accentColor: Long,
-    val createdAt: Instant,
-)
+    val city: String? = null,
+    val accentColor: Long? = null,
+    val createdAt: Instant? = null,
+) : RecordItem

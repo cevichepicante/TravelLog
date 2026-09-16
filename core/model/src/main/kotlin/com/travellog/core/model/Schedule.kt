@@ -7,16 +7,16 @@ data class Schedule(
     val id: String,
     val title: String,
     val destinations: List<Destination>,
-    val startDate: LocalDate?,
-    val endDate: LocalDate?,
-    val color: Long,
+    val startDate: LocalDate,
+    val endDate: LocalDate,
+    val accentColor: Long?,
     val createdAt: Instant,
 )
 
 data class Destination(
     val country: String,
-    val city: String?,
-    val flag: String,
+    val city: String,
+    val flagEmoji: String,
 )
 
 data class DestinationSuggestion(

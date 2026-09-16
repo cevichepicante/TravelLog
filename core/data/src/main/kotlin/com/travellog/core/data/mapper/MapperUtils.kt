@@ -8,3 +8,5 @@ internal fun String?.hexToColorLong(): Long {
         0L
     }
 }
+
+internal fun Long.toHexColor(): String = "#%06X".format(this)

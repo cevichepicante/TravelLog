@@ -17,7 +17,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:model"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.health.connect)

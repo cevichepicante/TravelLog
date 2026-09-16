@@ -1,19 +1,18 @@
-package com.travellog.core.data.repository
+package com.travellog.core.model.repository
 
 import com.travellog.core.model.Badge
 import com.travellog.core.model.PublicUser
 import com.travellog.core.model.User
 import com.travellog.core.model.UserStats
-import kotlinx.coroutines.flow.Flow
+import com.travellog.core.model.Visibility
 
 interface UserRepository {
-    fun observeCurrentUser(): Flow<User?>
-    suspend fun refreshCurrentUser()
+    suspend fun getMe(): User
     suspend fun updateMe(
         name: String? = null,
         avatarEmoji: String? = null,
         title: String? = null,
-        visibility: String? = null,
+        visibility: Visibility? = null,
     ): User
     suspend fun getStats(): UserStats
     suspend fun getPublicUser(userId: String): PublicUser

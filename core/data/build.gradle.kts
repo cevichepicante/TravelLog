@@ -17,18 +17,11 @@ android {
     kotlinOptions { jvmTarget = "17" }
 }
 
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
-
 dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:network"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
     implementation(libs.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
 }
